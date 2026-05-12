@@ -3,7 +3,7 @@
   "name": "hacyber-nexus-elite",
   "builds": [
     {
-      "src": "server.js",
+      "src": "sever.js",
       "use": "@vercel/node"
     },
     {
@@ -13,15 +13,12 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "server.js"
+      "src": "/api/transmit",
+      "dest": "sever.js"
     },
     {
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
