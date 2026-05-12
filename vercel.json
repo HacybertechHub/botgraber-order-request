@@ -1,18 +1,27 @@
 {
   "version": 2,
-  "name": "hacyberglobaltech-hub",
+  "name": "hacyber-nexus-elite",
   "builds": [
-    { "src": "app.js", "use": "@vercel/node" },
-    { "src": "index.html", "use": "@vercel/static" }
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
   ],
   "routes": [
-    { "src": "/success", "dest": "/index.html" },
-    { "src": "/webhook", "dest": "app.js" },
-    { "src": "/telegram-webhook", "dest": "app.js" },
-    { "src": "/flw-webhook", "dest": "app.js" }
+    {
+      "src": "/api/(.*)",
+      "dest": "server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ],
   "env": {
-    "BUSINESS_NAME": "HACYBERGLOBALTECH",
-    "SUPPORT_PHONE": "+1 470-283-0342"
+    "NODE_ENV": "production"
   }
 }
