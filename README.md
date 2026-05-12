@@ -1,6 +1,6 @@
-## HACYBERGLOBALTECH NEXUS ELITE GATEWAY v3.0
+## HACYBERGLOBALTECH™️ NEXUS ELITE GATEWAY v3.0
 
-**Provider:** H. Saib Global // Hacyber Global Tech
+**Provider:** HACYBERGLOBALTECH™️ // Hacyber Global Tech
 **Status:** PROD-READY
 
 ## System Overview
