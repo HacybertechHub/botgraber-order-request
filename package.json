@@ -1,11 +1,14 @@
 {
-  "name": "hacyberglobaltech-hub",
+  "name": "hacyber-prime-monolith",
   "version": "1.0.0",
-  "main": "app.js",
+  "description": "HGT Nexus Automation System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "axios": "^1.4.0",
-    "dotenv": "^16.0.0",
     "express": "^4.18.2",
-    "telegraf": "^4.12.2"
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
   }
 }
