@@ -1,50 +1,91 @@
-const express = require('express');
-const { Telegraf } = require('telegraf');
-const axios = require('axios');
-require('dotenv').config();
+/**
+ * HACYBER GLOBAL TECH - NEXUS CORE v1.1
+ * Client-Side Controller & Handshake Logic
+ */
 
-const app = express();
-app.use(express.json());
+document.addEventListener('DOMContentLoaded', () => {
+    const btnActivate = document.getElementById('btnActivate');
+    const btnHandshake = document.getElementById('btnHandshake');
+    const activationResult = document.getElementById('activationResult');
+    
+    // --- Key Generation Logic ---
+    function generateHybridKey(platform) {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let chunk = "";
+        for (let i = 0; i < 8; i++) {
+            chunk += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        const prefixes = { TG: 'HGT-TG-', WA: 'HGT-WA-', DS: 'HGT-DS-', IG: 'HGT-IG-' };
+        return (prefixes[platform] || 'HGT-ACT-') + chunk;
+    }
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-app.use(bot.webhookCallback('/telegram-webhook'));
+    // --- Secure Transmission Logic ---
+    async function transmitActivation(payload) {
+        try {
+            const response = await fetch('/api/transmit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-// 1. Telegram: Start Command
-bot.start((ctx) => ctx.reply(`Welcome to ${process.env.BUSINESS_NAME}. Global automation active.`));
+            const data = await response.json();
+            if (data.status === 'Handshake_Complete') {
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Vector Error:", error);
+            return false;
+        }
+    }
 
-// 2. Telegram: Generate USD Payment Link
-bot.command('pay', async (ctx) => {
-    try {
-        const response = await axios.post('https://api.flutterwave.com/v3/payments', {
-            tx_ref: `hacyber-${Date.now()}`,
-            amount: "100", // Default amount
-            currency: "USD",
-            redirect_url: "https://hacyberglobaltech.vercel.app/success",
-            customer: { email: process.env.SUPPORT_EMAIL, name: "Global Client" },
-            customizations: { title: "HACYBERGLOBALTECH Service" }
-        }, {
-            headers: { Authorization: `Bearer ${process.env.FLW_SECRET_KEY}` }
+    // --- Activation Event ---
+    btnActivate.addEventListener('click', async () => {
+        const platform = document.getElementById('platform').value;
+        const userId = document.getElementById('userId').value || "HGT-GUEST";
+        const botId = document.getElementById('botId').value || "PRIME-BOT";
+        const note = document.getElementById('note').value;
+
+        if (!platform) {
+            activationResult.style.color = "var(--danger)";
+            activationResult.textContent = "CRITICAL: Select platform vector.";
+            return;
+        }
+
+        const generatedKey = generateHybridKey(platform);
+        
+        // Visual Feedback
+        activationResult.style.color = "var(--neon)";
+        activationResult.textContent = "INITIALIZING SECURE HANDSHAKE...";
+
+        const success = await transmitActivation({
+            userId,
+            botId,
+            platform,
+            key: generatedKey,
+            note: note,
+            fee: "130.00" // Hardcoded protocol fee
         });
-        ctx.reply(`Secure USD Payment Link: ${response.data.data.link}`);
-    } catch (e) {
-        ctx.reply("System busy. Contact support at +14702830342.");
-    }
-});
 
-// 3. Flutterwave: Success Notification Webhook
-app.post('/flw-webhook', (req, res) => {
-    const signature = req.headers['verif-hash'];
-    if (signature === process.env.FLW_SECRET_HASH && req.body.status === 'successful') {
-        bot.telegram.sendMessage(process.env.MY_TELEGRAM_ID, `💰 Payment Received: ${req.body.amount} ${req.body.currency} from ${req.body.customer.email}`);
-    }
-    res.sendStatus(200);
-});
+        if (success) {
+            activationResult.style.color = "var(--accent)";
+            activationResult.textContent = `SUCCESS: Key Generated -> ${generatedKey}`;
+            // If the index_33.html saveActivationRow function exists, call it:
+            if (typeof saveActivationRow === "function") {
+                saveActivationRow(userId, botId, platform, generatedKey);
+            }
+        } else {
+            activationResult.style.color = "var(--danger)";
+            activationResult.textContent = "ERROR: Transmission handshake failed.";
+        }
+    });
 
-// 4. WhatsApp: Webhook Verification
-app.get('/webhook', (req, res) => {
-    if (req.query['hub.verify_token'] === process.env.VERIFY_TOKEN) {
-        res.send(req.query['hub.challenge']);
-    } else { res.sendStatus(403); }
+    // --- Visual Handshake Simulation ---
+    btnHandshake.addEventListener('click', () => {
+        if (typeof appendLog === "function") {
+            appendLog("[HANDSHAKE] Verifying system integrity...", "log-tag");
+            setTimeout(() => appendLog("[HANDSHAKE] Encrypting multi-platform tunnel...", "log-muted"), 500);
+            setTimeout(() => appendLog("[HANDSHAKE] Handshake protocol verified.", "log-tag"), 1000);
+        }
+    });
 });
-
-module.exports = app;
