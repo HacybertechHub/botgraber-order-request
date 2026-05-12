@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hacyber Globaltech | Client Order Portal</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- PIXEL TRACKING -->
+    <script>
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+    n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', 'YOUR_FACEBOOK_PIXEL_ID');
+    fbq('track', 'PageView');
+    </script>
+
+    <style>
+        :root {
+            --bg-main: #020617; --card-bg: #0d121f; --accent: #00ffcc;
+            --secondary: #3b82f6; --text-soft: #94a3b8; --border-soft: rgba(0, 255, 204, 0.15);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-main); background-image: radial-gradient(circle at top, #0f172a 0, #020617 45%, #000 100%); font-family: "Inter", system-ui, sans-serif; color: white; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        nav { width: 100%; padding: 1.2rem 5%; background: rgba(13, 18, 31, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .nav-logo-text { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: white; text-transform: uppercase; }
+        .nav-logo-text span { color: var(--accent); }
+        .container { width: 90%; max-width: 450px; margin: 40px auto; position: relative; z-index: 2; }
+        .card { background: rgba(13, 18, 31, 0.95); padding: 28px; border-radius: 24px; border: 1px solid var(--border-soft); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .header-box { text-align: center; margin-bottom: 25px; }
+        .gradient-text { background: linear-gradient(135deg, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; font-size: 24px; }
+        label { font-size: 11px; text-transform: uppercase; color: var(--accent); font-weight: 700; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+        input, select, textarea { width: 100%; padding: 12px 14px; background: #080b14; border: 1px solid #1e293b; border-radius: 12px; color: white; font-size: 14px; margin-bottom: 16px; }
+        .submit-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent), var(--secondary)); border: none; border-radius: 14px; font-weight: 800; color: #020617; text-transform: uppercase; cursor: pointer; transition: 0.3s; }
+        .contact-block { background: rgba(8, 11, 20, 0.6); border: 1px solid var(--border-soft); border-radius: 12px; padding: 14px; margin-top: 20px; text-align: center; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .contact-item a { color: var(--text-soft); text-decoration: none; font-size: 12px; }
+        .contact-item a:hover { color: var(--accent); }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(8px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; border: 1px solid var(--border-soft); }
+        .channel-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; text-decoration: none; font-weight: 700; color: white; }
+        .wa { background: #22c55e; } .tg { background: #229ED9; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-logo-text">HACYBER<span>GLOBALTECH</span></div>
+        <span style="font-size: 10px; color: var(--accent); font-weight: 800;">MID: 100725543</span>
+    </nav>
+
+    <div class="container">
+        <div class="header-box">
+            <h1 class="gradient-text">Client Order Request</h1>
+            <p style="color: var(--text-soft); font-size: 13px;">Secure Automation Provisioning Portal</p>
+        </div>
+
+        <form id="orderForm" class="card">
+            <label><i data-lucide="user"></i> Full Name</label>
+            <input type="text" id="fullName" placeholder="Client Name" required />
+            
+            <label><i data-lucide="phone"></i> Phone Number</label>
+            <input type="tel" id="phone" placeholder="+1 310 XXX XXXX" required />
+
+            <div class="row" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label><i data-lucide="hash"></i> Order ID</label>
+                    <input type="text" id="systemId" placeholder="ID-887" pattern="ID-[0-9]{3,}" required />
+                </div>
+                <div style="flex: 1;">
+                    <label><i data-lucide="credit-card"></i> Payment</label>
+                    <select id="payment" required>
+                        <option value="Flutterwave">USD (Flutterwave)</option>
+                        <option value="Bitcoin">Bitcoin</option>
+                        <option value="Cash App">Cash App</option>
+                    </select>
+                </div>
+            </div>
+
+            <label><i data-lucide="file-text"></i> Project Details</label>
+            <textarea id="orderNotes" rows="2" placeholder="Describe your automation requirements..."></textarea>
+
+            <button type="submit" class="submit-btn">Submit Order</button>
+
+            <div class="contact-block">
+                <h3 style="font-size: 11px; color: var(--accent); text-transform: uppercase;">Support Hub</h3>
+                <div class="contact-grid">
+                    <div class="contact-item"><a href="https://wa.me/13609552434">WhatsApp</a></div>
+                    <div class="contact-item"><a href="https://t.me/hacyberglobaltech">Telegram</a></div>
+                </div>
+                <p style="font-size: 10px; color: var(--text-soft); margin-top: 10px;">Support: +1 470-283-0342</p>
+            </div>
+        </form>
+    </div>
+
+    <!-- MODAL -->
+    <div id="supportModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 10px;">Order Transmitted</h2>
+            <p style="color: var(--text-soft); font-size: 13px; margin-bottom: 20px;">Choose a gateway to finalize payment and start deployment.</p>
+            <a href="#" class="channel-btn tg" id="tgLink" target="_blank">Continue to Telegram</a>
+            <a href="#" class="channel-btn wa" id="waLink" target="_blank">Continue to WhatsApp</a>
+            <button onclick="location.reload()" style="background: transparent; color: var(--text-soft); border: none; margin-top: 15px; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const form = document.getElementById("orderForm");
+        const modal = document.getElementById("supportModal");
+
+        // CREDENTIALS
+        const BOT_TOKEN = '8553153542:AAGt6kyHdvYSGZJcsKZ2Vdqr7bFi1z-gj3U';
+        const CHAT_ID = 'YOUR_PERSONAL_TELEGRAM_ID'; // Replace with your numeric ID
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                name: document.getElementById("fullName").value,
+                phone: document.getElementById("phone").value,
+                id: document.getElementById("systemId").value,
+                method: document.getElementById("payment").value,
+                notes: document.getElementById("orderNotes").value
+            };
+
+            const message = `🚨 *NEW ORDER: HACYBER*\n\n👤 Name: ${data.name}\n📱 Phone: ${data.phone}\n🆔 ID: ${data.id}\n💳 Payment: ${data.method}\n📝 Notes: ${data.notes}`;
+
+            // 1. Send to Telegram Bot
+            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' })
+            });
+
+            // 2. Trigger Vercel Webhook (Automation)
+            fetch('/webhook', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(err => console.log("Webhook skipped"));
+
+            // 3. Update Redirect Links
+            const encoded = encodeURIComponent(message);
+            document.getElementById("tgLink").href = `https://t.me/hacyberglobaltech?text=${encoded}`;
+            document.getElementById("waLink").href = `https://wa.me/13609552434?text=${encoded}`;
+            
+            modal.style.display = "flex";
+        });
+    </script>
+</body>
+</html>
