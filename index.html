@@ -1,220 +1,408 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HGT-CORE | NEXUS UNIFIED TERMINAL</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root {
-            --bg-main: #020617; 
-            --card-bg: rgba(13, 18, 31, 0.9); 
-            --accent: #00ffcc; 
-            --danger: #ff3b6a;
-            --text-soft: #94a3b8; 
-            --border-glow: rgba(0, 255, 204, 0.3);
-            --font-mono: "JetBrains Mono", "Courier New", monospace;
-        }
+<meta charset="UTF-8">
+<title>HACYBER PRIME // NEXUS ELITE GATEWAY</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            background: var(--bg-main); 
-            background-image: radial-gradient(circle at top, #07111f 0, #020308 55%, #000 100%);
-            font-family: var(--font-mono); 
-            color: white; 
-            min-height: 100vh; 
-            overflow-x: hidden;
-        }
+<style>
+:root{
+  --bg:#020308;
+  --bg-alt:#050814;
+  --neon:#00f2ff;
+  --neon-soft:rgba(0,242,255,.35);
+  --accent:#00ff6a;
+  --danger:#ff3b6a;
+  --text:#f5f5f5;
+  --muted:#7b8a9a;
+  --border:rgba(0,242,255,.25);
+  --font:'Courier New',monospace;
+  --glow:0 0 12px rgba(0,242,255,.8),0 0 28px rgba(0,242,255,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(circle at top,#07111f 0,#020308 55%,#000 100%);
+  color:var(--text);
+  font-family:var(--font);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+.app-shell{
+  width:100%;
+  max-width:1120px;
+  border:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(0,242,255,.06),rgba(0,0,0,.9));
+  box-shadow:var(--glow),inset 0 0 24px rgba(0,242,255,.12);
+  position:relative;
+  overflow:hidden;
+}
+.app-shell::before{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background:
+    radial-gradient(circle at 10% 0,rgba(0,242,255,.12),transparent 55%),
+    radial-gradient(circle at 90% 100%,rgba(0,255,106,.12),transparent 55%);
+  opacity:.6;
+  pointer-events:none;
+}
+.app-inner{position:relative;z-index:2;padding:18px 20px 20px}
 
-        /* UI SHELL */
-        nav { 
-            width: 100%; 
-            padding: 1rem 5%; 
-            background: rgba(8, 11, 20, 0.9); 
-            backdrop-filter: blur(15px); 
-            border-bottom: 2px solid var(--accent); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            position: sticky; top: 0; z-index: 100;
-        }
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+}
+.brand-block{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.brand-title{
+  font-size:1.15rem;
+  letter-spacing:.45em;
+  text-transform:uppercase;
+  color:var(--neon);
+  text-shadow:var(--glow);
+}
+.brand-sub{
+  font-size:.7rem;
+  color:var(--muted);
+  letter-spacing: 0.1em;
+}
+.status-pill{
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:.7rem;
+  color:var(--accent);
+  background:rgba(0,0,0,.6);
+}
+.status-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 8px var(--accent);
+}
 
-        .container { width: 95%; max-width: 1100px; margin: 40px auto; }
+/* BOOT / LOG PANEL */
+.grid{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:14px;
+}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+}
+.panel{
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.7);
+  padding:12px 12px 10px;
+  position:relative;
+}
+.panel-title{
+  font-size:.7rem;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.log-window{
+  height:140px;
+  background:radial-gradient(circle at top,rgba(0,242,255,.08),#020308);
+  border:1px solid rgba(0,242,255,.18);
+  padding:8px;
+  font-size:.72rem;
+  color:var(--accent);
+  overflow-y:auto;
+}
+.log-line{margin-bottom:2px;white-space:nowrap}
+.log-tag{color:var(--neon-soft)}
+.log-warn{color:var(--danger)}
 
-        /* TAB SYSTEM */
-        .nav-tabs { display: flex; gap: 5px; margin-bottom: 20px; }
-        .tab-btn { 
-            background: rgba(0, 255, 204, 0.05); border: 1px solid var(--border-glow);
-            color: var(--text-soft); padding: 10px 20px; cursor: pointer; font-size: 12px;
-            text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
-        }
-        .tab-btn.active { background: var(--accent); color: #000; font-weight: bold; }
+/* NAV TABS */
+.nav-tabs{
+  display:flex;
+  gap:6px;
+  margin-top:10px;
+}
+.nav-btn{
+  flex:1;
+  padding:8px 6px;
+  font-size:.7rem;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  border:1px solid rgba(0,242,255,.25);
+  background:rgba(0,0,0,.7);
+  color:var(--muted);
+  cursor:pointer;
+  transition:.18s;
+}
+.nav-btn.active{
+  color:#000;
+  background:var(--neon);
+  border-color:var(--neon);
+  box-shadow:var(--glow);
+}
 
-        /* PANELS */
-        .grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
-        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+/* MAIN SECTIONS */
+.sections{
+  margin-top:10px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.8);
+  padding:12px;
+}
+.section{display:none}
+.section.active{display:block}
 
-        .card { 
-            background: var(--card-bg); border: 1px solid var(--border-glow);
-            padding: 25px; border-radius: 4px; position: relative;
-        }
+/* FORM ELEMENTS */
+.field-label{
+  font-size:.7rem;
+  color:var(--muted);
+  margin-top:8px;
+  margin-bottom:2px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
+input,select,textarea{
+  width:100%;
+  padding:10px;
+  background:#020308;
+  border:1px solid rgba(0,242,255,.3);
+  color:var(--accent);
+  font-family:var(--font);
+  font-size:.85rem;
+  outline:none;
+}
+input:focus{ border-color:var(--neon); box-shadow: 0 0 5px var(--neon-soft); }
 
-        .log-window {
-            height: 200px; background: #000; border: 1px solid #1e293b;
-            padding: 10px; font-size: 11px; color: var(--accent);
-            overflow-y: auto; margin-top: 10px;
-        }
+.btn-primary{
+  width:100%;
+  padding:14px;
+  margin-top:15px;
+  background:var(--accent);
+  border:none;
+  color:#000;
+  font-weight:bold;
+  text-transform:uppercase;
+  letter-spacing:.15em;
+  cursor:pointer;
+  box-shadow:0 0 15px rgba(0,255,106,.4);
+  transition: 0.2s ease;
+}
+.btn-primary:hover{ filter: brightness(1.2); }
 
-        /* FORM ELEMENTS */
-        label { display: block; font-size: 10px; color: var(--accent); margin: 15px 0 5px; text-transform: uppercase; }
-        input, select, textarea { 
-            width: 100%; padding: 12px; background: rgba(0,0,0,0.5);
-            border: 1px solid #1e293b; color: var(--accent); font-family: var(--font-mono);
-        }
-        .btn-prime {
-            width: 100%; padding: 15px; margin-top: 20px; background: transparent;
-            border: 2px solid var(--accent); color: var(--accent); cursor: pointer;
-            font-weight: bold; text-transform: uppercase; transition: 0.3s;
-        }
-        .btn-prime:hover { background: var(--accent); color: #000; box-shadow: 0 0 20px var(--accent); }
+.mission-statement{
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 10px;
+  border-left: 2px solid var(--neon);
+  padding-left: 10px;
+  font-style: italic;
+}
 
-        /* STATUSES */
-        .status-pill { font-size: 10px; padding: 4px 8px; border: 1px solid var(--accent); color: var(--accent); }
-        .hidden { display: none; }
-    </style>
+.fee-badge{
+  display:inline-block;
+  background:rgba(0,255,106,0.1);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  padding:4px 10px;
+  font-size:0.75rem;
+  margin-top:12px;
+  font-weight: bold;
+}
+
+/* FOOTER */
+.footer{
+  margin-top:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:.65rem;
+  color:var(--muted);
+}
+</style>
 </head>
 <body>
 
-    <nav>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 12px; height: 12px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent);"></div>
-            <span style="font-weight: 900; letter-spacing: 2px;">HACYBER GLOBALTECH</span>
-        </div>
-        <div class="status-pill">CORE_ENCRYPTED_V3.0</div>
-    </nav>
+<div class="app-shell">
+  <div class="app-inner">
 
-    <div class="container">
-        <!-- NAVIGATION -->
-        <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('intake')">01. Order Intake</button>
-            <button class="tab-btn" id="botTab" onclick="switchTab('bot')">02. Activation Bot [LOCKED]</button>
-        </div>
-
-        <div class="grid">
-            <!-- MAIN CONTENT AREA -->
-            <div class="main-panel">
-                
-                <!-- SECTION 1: INTAKE -->
-                <div id="section-intake" class="card">
-                    <h2 style="color: var(--accent); margin-bottom: 5px;">NEXUS ORDER INTAKE</h2>
-                    <p style="font-size: 11px; color: var(--text-soft); margin-bottom: 20px;">[PROTOCOL: SECURE_DATA_COLLECTION]</p>
-                    
-                    <form id="orderForm">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div>
-                                <label>Identity_Name</label>
-                                <input type="text" id="fullName" placeholder="FULL NAME" required />
-                            </div>
-                            <div>
-                                <label>Order_ID</label>
-                                <input type="text" id="systemId" placeholder="HGT-001" required />
-                            </div>
-                        </div>
-
-                        <label>Deployment_Plan</label>
-                        <select id="plan">
-                            <option value="Elite Activation ($130.00)">Elite Activation ($130.00)</option>
-                            <option value="Enterprise Nexus ($199.99)">Enterprise Nexus ($199.99)</option>
-                            <option value="Starter Core ($91.99)">Starter Core ($91.99)</option>
-                        </select>
-
-                        <label>Encrypted_Email</label>
-                        <input type="email" id="email" placeholder="CLIENT@HACYBER.TECH" required />
-
-                        <button type="submit" class="btn-prime">Execute Submission & Unlock Bot</button>
-                    </form>
-                </div>
-
-                <!-- SECTION 2: BOT (HIDDEN UNTIL SUBMITTED) -->
-                <div id="section-bot" class="card hidden">
-                    <h2 style="color: var(--accent); margin-bottom: 5px;">PRIME ACTIVATION BOT</h2>
-                    <p style="font-size: 11px; color: var(--text-soft); margin-bottom: 20px;">[IDENTITY: HGT-PRIME-HYBRID]</p>
-                    
-                    <label>Target Platform</label>
-                    <select id="platform">
-                        <option value="TG">Telegram Channel</option>
-                        <option value="WA">WhatsApp Business</option>
-                        <option value="DS">Discord Node</option>
-                    </select>
-
-                    <button class="btn-prime" onclick="generateKey()">Generate Hybrid Key</button>
-                    
-                    <div id="keyDisplay" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.4); border: 1px dashed var(--accent); text-align: center; display: none;">
-                        <span id="keyValue" style="font-size: 18px; color: var(--accent); font-weight: bold; letter-spacing: 3px;"></span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SIDEBAR: LOGS & STATUS -->
-            <div class="side-panel">
-                <div class="card" style="height: 100%;">
-                    <h3 style="font-size: 12px; color: var(--accent);">SYSTEM_LOGS</h3>
-                    <div id="logWindow" class="log-window">
-                        <div>> [PRIME] System Initialized...</div>
-                        <div>> [PRIME] Ready for handshake...</div>
-                    </div>
-                    
-                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #1e293b;">
-                        <h3 style="font-size: 12px; color: var(--accent); margin-bottom: 10px;">DIRECT_ACCESS</h3>
-                        <a href="https://wa.me/13609552434" style="color: var(--text-soft); font-size: 11px; text-decoration: none; display: block; margin-bottom: 5px;">> WhatsApp_Secure</a>
-                        <a href="https://t.me/hacyberglobaltech" style="color: var(--text-soft); font-size: 11px; text-decoration: none; display: block;">> Telegram_Node</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- HEADER -->
+    <div class="header">
+      <div class="brand-block">
+        <div class="brand-title">HACYBER PRIME</div>
+        <div class="brand-sub">HACYBER GLOBAL TECH // NEXUS ELITE GATEWAY</div>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>SYSTEM_INTEGRITY: SECURE</span>
+      </div>
     </div>
 
-    <script>
-        function log(msg) {
-            const win = document.getElementById('logWindow');
-            const entry = document.createElement('div');
-            entry.textContent = `> ${msg}`;
-            win.appendChild(entry);
-            win.scrollTop = win.scrollHeight;
-        }
+    <!-- SYSTEM GRID -->
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-title">
+          <span>TERMINAL_BOOT_LOG</span>
+          <span>STABLE_v3.0</span>
+        </div>
+        <div id="logWindow" class="log-window"></div>
+      </div>
 
-        function switchTab(tab) {
-            if (tab === 'bot' && document.getElementById('botTab').innerText.includes('LOCKED')) {
-                log('ACCESS DENIED: Submit order first.');
-                return;
-            }
-            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-            document.getElementById('section-' + tab).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-        }
+      <div class="panel">
+        <div class="panel-title"><span>CORE_OBJECTIVE</span></div>
+        <div class="mission-statement">
+          Providing advanced automation, bot development, and secure digital solutions across multiple platforms. 
+          Focused on efficiency, system integrity, and streamlined access management for clients and services.
+        </div>
+        <div class="fee-badge">ACTIVATION_FEE: $130.00</div>
+      </div>
+    </div>
 
-        document.getElementById('orderForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            log('INITIALIZING HANDSHAKE...');
-            log('DATA_ENCRYPTED: ' + document.getElementById('fullName').value);
-            
-            setTimeout(() => {
-                log('ACCESS GRANTED: PRIME BOT UNLOCKED.');
-                document.getElementById('botTab').innerText = '02. Activation Bot';
-                document.getElementById('botTab').style.color = 'var(--accent)';
-                alert('Handshake Successful. Prime Bot is now online.');
-            }, 1000);
-        });
+    <!-- NAVIGATION -->
+    <div class="nav-tabs">
+      <button class="nav-btn active" data-target="portal">ACTIVATION_PORTAL</button>
+      <button class="nav-btn" data-target="chat">SECURE_CHANNEL</button>
+      <button class="nav-btn" data-target="admin">SYSTEM_REGISTRY</button>
+    </div>
 
-        function generateKey() {
-            const platform = document.getElementById('platform').value;
-            const key = "HGT-" + platform + "-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-            document.getElementById('keyDisplay').style.display = 'block';
-            document.getElementById('keyValue').innerText = key;
-            log(`KEY_GENERATED for ${platform}: ${key}`);
-        }
-    </script>
+    <!-- CONTENT SECTIONS -->
+    <div class="sections">
+      
+      <!-- ACTIVATION PORTAL -->
+      <div id="portal" class="section active">
+        <label class="field-label">CLIENT_ID</label>
+        <input id="userId" placeholder="HGT-USER-XXXXX">
+        
+        <label class="field-label">TARGET_BOT_ID</label>
+        <input id="botId" placeholder="BOT-CORE-PRIME">
+
+        <label class="field-label">ACCESS_VECTOR</label>
+        <select id="platform">
+          <option value="TG">TELEGRAM (PRIMARY)</option>
+          <option value="WA">WHATSAPP</option>
+          <option value="DS">DISCORD</option>
+          <option value="IG">INSTAGRAM</option>
+        </select>
+
+        <button class="btn-primary" id="btnActivate">INITIALIZE HANDSHAKE</button>
+        <div id="result" style="margin-top:15px; color:var(--accent); font-size:0.85rem; letter-spacing: 0.1em;"></div>
+      </div>
+
+      <!-- CHAT CHANNEL -->
+      <div id="chat" class="section">
+        <div id="chatBox" class="log-window" style="height:190px;"></div>
+        <input id="chatInput" style="margin-top:10px;" placeholder="Transmit encrypted packet...">
+      </div>
+
+      <!-- SYSTEM REGISTRY -->
+      <div id="admin" class="section">
+        <div style="color:var(--muted); font-size:0.75rem;">Verification handshakes recorded in current deployment session.</div>
+        <div id="registry" style="margin-top:10px;"></div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <span>© 2026 HACYBER GLOBAL TECH // H. SAIB GLOBAL</span>
+      <span>IDENTITY: PRIME HYBRID // BRANDED</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const logWindow = document.getElementById("logWindow");
+const bootSequence = [
+  "[BOOT] Loading HGT-Core-Nexus-Elite...",
+  "[AUTH] Setting Global Fee: $130.00 USD",
+  "[SYS] Mission Profile: Advanced Automation & Digital Solutions",
+  "[LINK] Secure Handshake Protocol: ONLINE",
+  "[READY] Hacyber Global Tech Gateway is Ready."
+];
+
+function addLog(msg, color) {
+  const div = document.createElement("div");
+  div.className = "log-line";
+  if(color) div.style.color = color;
+  div.textContent = msg;
+  logWindow.appendChild(div);
+  logWindow.scrollTop = logWindow.scrollHeight;
+}
+
+// Simulated Boot
+bootSequence.forEach((line, i) => {
+  setTimeout(() => addLog(line), i * 350);
+});
+
+// Navigation Handling
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.target).classList.add('active');
+  });
+});
+
+// Activation Process
+document.getElementById("btnActivate").addEventListener("click", async () => {
+  const userId = document.getElementById("userId").value.trim();
+  const botId = document.getElementById("botId").value.trim();
+  const platform = document.getElementById("platform").value;
+  const key = "HGT-" + Math.random().toString(36).substring(2, 9).toUpperCase();
+
+  if(!userId || !botId) {
+    addLog("[ERR] IDENTITY_MISSING. ACCESS DENIED.", "#ff3b6a");
+    return;
+  }
+
+  addLog(`[TX] Initiating Handshake for ${userId}...`, "#00f2ff");
+  
+  try {
+    const response = await fetch('/api/transmit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, botId, platform, key })
+    });
+    
+    if(response.ok) {
+      document.getElementById("result").textContent = `ACCESS GRANTED // KEY: ${key}`;
+      addLog(`[CONFIRM] Handshake Verified. ${platform} Link Established.`, "#00ff6a");
+    } else {
+      throw new Error();
+    }
+  } catch (e) {
+    addLog("[BRIDGE] External Server Link Not Detected. Running Local Simulation.", "#7b8a9a");
+    document.getElementById("result").textContent = `LOCAL_ACTIVATION: ${key}`;
+  }
+});
+
+// Chat Interaction
+document.getElementById("chatInput").addEventListener("keypress", (e) => {
+    if(e.key === "Enter" && e.target.value) {
+        const chatBox = document.getElementById("chatBox");
+        const line = document.createElement("div");
+        line.textContent = "USER_TX: " + e.target.value;
+        line.className = "log-line";
+        chatBox.appendChild(line);
+        e.target.value = "";
+    }
+});
+</script>
+
 </body>
 </html>
