@@ -2,7 +2,6 @@
 
 **Provider:** HACYBERGLOBALTECH™️ // Hacyber Global Tech
 **Status:** PROD-READY
-
 ## System Overview
 High-end automation and secure activation gateway designed for streamlined access management.
 
