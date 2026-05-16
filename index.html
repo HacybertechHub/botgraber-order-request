@@ -1,408 +1,276 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>HACYBER PRIME // NEXUS ELITE GATEWAY</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en"><head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
 
-<style>
-:root{
-  --bg:#020308;
-  --bg-alt:#050814;
-  --neon:#00f2ff;
-  --neon-soft:rgba(0,242,255,.35);
-  --accent:#00ff6a;
-  --danger:#ff3b6a;
-  --text:#f5f5f5;
-  --muted:#7b8a9a;
-  --border:rgba(0,242,255,.25);
-  --font:'Courier New',monospace;
-  --glow:0 0 12px rgba(0,242,255,.8),0 0 28px rgba(0,242,255,.35);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  background:radial-gradient(circle at top,#07111f 0,#020308 55%,#000 100%);
-  color:var(--text);
-  font-family:var(--font);
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:18px;
-}
-.app-shell{
-  width:100%;
-  max-width:1120px;
-  border:1px solid var(--border);
-  background:linear-gradient(135deg,rgba(0,242,255,.06),rgba(0,0,0,.9));
-  box-shadow:var(--glow),inset 0 0 24px rgba(0,242,255,.12);
-  position:relative;
-  overflow:hidden;
-}
-.app-shell::before{
-  content:"";
-  position:absolute;
-  inset:-40%;
-  background:
-    radial-gradient(circle at 10% 0,rgba(0,242,255,.12),transparent 55%),
-    radial-gradient(circle at 90% 100%,rgba(0,255,106,.12),transparent 55%);
-  opacity:.6;
-  pointer-events:none;
-}
-.app-inner{position:relative;z-index:2;padding:18px 20px 20px}
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
 
-/* HEADER */
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:14px;
-}
-.brand-block{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-}
-.brand-title{
-  font-size:1.15rem;
-  letter-spacing:.45em;
-  text-transform:uppercase;
-  color:var(--neon);
-  text-shadow:var(--glow);
-}
-.brand-sub{
-  font-size:.7rem;
-  color:var(--muted);
-  letter-spacing: 0.1em;
-}
-.status-pill{
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  display:flex;
-  align-items:center;
-  gap:6px;
-  font-size:.7rem;
-  color:var(--accent);
-  background:rgba(0,0,0,.6);
-}
-.status-dot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--accent);
-  box-shadow:0 0 8px var(--accent);
-}
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
 
-/* BOOT / LOG PANEL */
-.grid{
-  display:grid;
-  grid-template-columns:1.1fr .9fr;
-  gap:14px;
-}
-@media(max-width:900px){
-  .grid{grid-template-columns:1fr}
-}
-.panel{
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.7);
-  padding:12px 12px 10px;
-  position:relative;
-}
-.panel-title{
-  font-size:.7rem;
-  letter-spacing:.18em;
-  text-transform:uppercase;
-  color:var(--muted);
-  margin-bottom:6px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.log-window{
-  height:140px;
-  background:radial-gradient(circle at top,rgba(0,242,255,.08),#020308);
-  border:1px solid rgba(0,242,255,.18);
-  padding:8px;
-  font-size:.72rem;
-  color:var(--accent);
-  overflow-y:auto;
-}
-.log-line{margin-bottom:2px;white-space:nowrap}
-.log-tag{color:var(--neon-soft)}
-.log-warn{color:var(--danger)}
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
 
-/* NAV TABS */
-.nav-tabs{
-  display:flex;
-  gap:6px;
-  margin-top:10px;
-}
-.nav-btn{
-  flex:1;
-  padding:8px 6px;
-  font-size:.7rem;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-  border:1px solid rgba(0,242,255,.25);
-  background:rgba(0,0,0,.7);
-  color:var(--muted);
-  cursor:pointer;
-  transition:.18s;
-}
-.nav-btn.active{
-  color:#000;
-  background:var(--neon);
-  border-color:var(--neon);
-  box-shadow:var(--glow);
-}
+  // --- Transport Layer ---
 
-/* MAIN SECTIONS */
-.sections{
-  margin-top:10px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.8);
-  padding:12px;
-}
-.section{display:none}
-.section.active{display:block}
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
 
-/* FORM ELEMENTS */
-.field-label{
-  font-size:.7rem;
-  color:var(--muted);
-  margin-top:8px;
-  margin-bottom:2px;
-  text-transform:uppercase;
-  letter-spacing:.12em;
-}
-input,select,textarea{
-  width:100%;
-  padding:10px;
-  background:#020308;
-  border:1px solid rgba(0,242,255,.3);
-  color:var(--accent);
-  font-family:var(--font);
-  font-size:.85rem;
-  outline:none;
-}
-input:focus{ border-color:var(--neon); box-shadow: 0 0 5px var(--neon-soft); }
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
 
-.btn-primary{
-  width:100%;
-  padding:14px;
-  margin-top:15px;
-  background:var(--accent);
-  border:none;
-  color:#000;
-  font-weight:bold;
-  text-transform:uppercase;
-  letter-spacing:.15em;
-  cursor:pointer;
-  box-shadow:0 0 15px rgba(0,255,106,.4);
-  transition: 0.2s ease;
-}
-.btn-primary:hover{ filter: brightness(1.2); }
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
 
-.mission-statement{
-  font-size: 0.75rem;
-  color: var(--muted);
-  line-height: 1.5;
-  margin-top: 10px;
-  border-left: 2px solid var(--neon);
-  padding-left: 10px;
-  font-style: italic;
-}
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
 
-.fee-badge{
-  display:inline-block;
-  background:rgba(0,255,106,0.1);
-  border:1px solid var(--accent);
-  color:var(--accent);
-  padding:4px 10px;
-  font-size:0.75rem;
-  margin-top:12px;
-  font-weight: bold;
-}
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
 
-/* FOOTER */
-.footer{
-  margin-top:15px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:.65rem;
-  color:var(--muted);
-}
-</style>
-</head>
-<body>
-
-<div class="app-shell">
-  <div class="app-inner">
-
-    <!-- HEADER -->
-    <div class="header">
-      <div class="brand-block">
-        <div class="brand-title">HACYBER PRIME</div>
-        <div class="brand-sub">HACYBER GLOBAL TECH // NEXUS ELITE GATEWAY</div>
-      </div>
-      <div class="status-pill">
-        <div class="status-dot"></div>
-        <span>SYSTEM_INTEGRITY: SECURE</span>
-      </div>
-    </div>
-
-    <!-- SYSTEM GRID -->
-    <div class="grid">
-      <div class="panel">
-        <div class="panel-title">
-          <span>TERMINAL_BOOT_LOG</span>
-          <span>STABLE_v3.0</span>
-        </div>
-        <div id="logWindow" class="log-window"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-title"><span>CORE_OBJECTIVE</span></div>
-        <div class="mission-statement">
-          Providing advanced automation, bot development, and secure digital solutions across multiple platforms. 
-          Focused on efficiency, system integrity, and streamlined access management for clients and services.
-        </div>
-        <div class="fee-badge">ACTIVATION_FEE: $130.00</div>
-      </div>
-    </div>
-
-    <!-- NAVIGATION -->
-    <div class="nav-tabs">
-      <button class="nav-btn active" data-target="portal">ACTIVATION_PORTAL</button>
-      <button class="nav-btn" data-target="chat">SECURE_CHANNEL</button>
-      <button class="nav-btn" data-target="admin">SYSTEM_REGISTRY</button>
-    </div>
-
-    <!-- CONTENT SECTIONS -->
-    <div class="sections">
-      
-      <!-- ACTIVATION PORTAL -->
-      <div id="portal" class="section active">
-        <label class="field-label">CLIENT_ID</label>
-        <input id="userId" placeholder="HGT-USER-XXXXX">
-        
-        <label class="field-label">TARGET_BOT_ID</label>
-        <input id="botId" placeholder="BOT-CORE-PRIME">
-
-        <label class="field-label">ACCESS_VECTOR</label>
-        <select id="platform">
-          <option value="TG">TELEGRAM (PRIMARY)</option>
-          <option value="WA">WHATSAPP</option>
-          <option value="DS">DISCORD</option>
-          <option value="IG">INSTAGRAM</option>
-        </select>
-
-        <button class="btn-primary" id="btnActivate">INITIALIZE HANDSHAKE</button>
-        <div id="result" style="margin-top:15px; color:var(--accent); font-size:0.85rem; letter-spacing: 0.1em;"></div>
-      </div>
-
-      <!-- CHAT CHANNEL -->
-      <div id="chat" class="section">
-        <div id="chatBox" class="log-window" style="height:190px;"></div>
-        <input id="chatInput" style="margin-top:10px;" placeholder="Transmit encrypted packet...">
-      </div>
-
-      <!-- SYSTEM REGISTRY -->
-      <div id="admin" class="section">
-        <div style="color:var(--muted); font-size:0.75rem;">Verification handshakes recorded in current deployment session.</div>
-        <div id="registry" style="margin-top:10px;"></div>
-      </div>
-
-    </div>
-
-    <!-- FOOTER -->
-    <div class="footer">
-      <span>© 2026 HACYBER GLOBAL TECH // H. SAIB GLOBAL</span>
-      <span>IDENTITY: PRIME HYBRID // BRANDED</span>
-    </div>
-
-  </div>
-</div>
-
-<script>
-const logWindow = document.getElementById("logWindow");
-const bootSequence = [
-  "[BOOT] Loading HGT-Core-Nexus-Elite...",
-  "[AUTH] Setting Global Fee: $130.00 USD",
-  "[SYS] Mission Profile: Advanced Automation & Digital Solutions",
-  "[LINK] Secure Handshake Protocol: ONLINE",
-  "[READY] Hacyber Global Tech Gateway is Ready."
-];
-
-function addLog(msg, color) {
-  const div = document.createElement("div");
-  div.className = "log-line";
-  if(color) div.style.color = color;
-  div.textContent = msg;
-  logWindow.appendChild(div);
-  logWindow.scrollTop = logWindow.scrollHeight;
-}
-
-// Simulated Boot
-bootSequence.forEach((line, i) => {
-  setTimeout(() => addLog(line), i * 350);
-});
-
-// Navigation Handling
-document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.target).classList.add('active');
-  });
-});
-
-// Activation Process
-document.getElementById("btnActivate").addEventListener("click", async () => {
-  const userId = document.getElementById("userId").value.trim();
-  const botId = document.getElementById("botId").value.trim();
-  const platform = document.getElementById("platform").value;
-  const key = "HGT-" + Math.random().toString(36).substring(2, 9).toUpperCase();
-
-  if(!userId || !botId) {
-    addLog("[ERR] IDENTITY_MISSING. ACCESS DENIED.", "#ff3b6a");
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      p.timestamp = message.timestamp;
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
     return;
   }
 
-  addLog(`[TX] Initiating Handshake for ${userId}...`, "#00f2ff");
-  
-  try {
-    const response = await fetch('/api/transmit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, botId, platform, key })
-    });
-    
-    if(response.ok) {
-      document.getElementById("result").textContent = `ACCESS GRANTED // KEY: ${key}`;
-      addLog(`[CONFIRM] Handshake Verified. ${platform} Link Established.`, "#00ff6a");
-    } else {
-      throw new Error();
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
     }
-  } catch (e) {
-    addLog("[BRIDGE] External Server Link Not Detected. Running Local Simulation.", "#7b8a9a");
-    document.getElementById("result").textContent = `LOCAL_ACTIVATION: ${key}`;
   }
-});
 
-// Chat Interaction
-document.getElementById("chatInput").addEventListener("keypress", (e) => {
-    if(e.key === "Enter" && e.target.value) {
-        const chatBox = document.getElementById("chatBox");
-        const line = document.createElement("div");
-        line.textContent = "USER_TX: " + e.target.value;
-        line.className = "log-line";
-        chatBox.appendChild(line);
-        e.target.value = "";
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
     }
-});
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<!-- PLAYABLE_TOUCH_PATCH_V1 --><script>
+(function() {
+  if (window.__playableTouchPatchInstalled) return;
+  window.__playableTouchPatchInstalled = true;
+  var origAdd = EventTarget.prototype.addEventListener;
+  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
+  EventTarget.prototype.addEventListener = function(type, listener, options) {
+    if (blockedTypes[type]) {
+      if (options === undefined || options === null) {
+        options = { passive: true };
+      } else if (typeof options === 'boolean') {
+        options = { capture: options, passive: true };
+      } else {
+        options = Object.assign({}, options, { passive: true });
+      }
+    }
+    return origAdd.call(this, type, listener, options);
+  };
+})();
+</script><script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<title>HACYBER GLOBALTECH - Bot Grabber $130</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0a0a0a;color:#fff;margin:0;padding:20px}
+h1{color:#00ff88;text-align:center}
+.card{background:#111;border:1px solid #333;border-radius:12px;padding:20px;margin:15px auto;max-width:600px}
+.price{font-size:32px;color:#00ff88;font-weight:700}
+.note{color:#ffaa00;font-weight:600;margin:10px 0}
+ul{line-height:1.8}
+.btn{background:#00ff88;color:#000;padding:12px 20px;border:none;border-radius:8px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
+#timer{display:none}
+#countdown{font-size:48px;text-align:center;color:#00ff88}
+</style>
+</head>
+<body>
+<h1>HACYBER GLOBALTECH</h1>
+
+<div class="card">
+  <div class="price">$130 Bot Grabber</div>
+  <p class="note">⏱️ Link sent within 35 minutes max after payment verification</p>
+  <p><strong>First-time setup:</strong> $130 • <strong>Monthly renewal:</strong> $90</p>
+  <p><strong>Works on:</strong> DoorDash • Uber Eats • Grubhub • Instacart • Amazon Flex</p>
+</div>
+
+<div class="card">
+  <h3>Pay with Crypto</h3>
+  <p><strong>BTC:</strong> bc1qxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+  <p><strong>ETH/USDT (ERC20):</strong> 0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+  <p><strong>SOL:</strong> xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
+</div>
+
+<div class="card">
+  <h3>Pay with Bank (Lead Bank)</h3>
+  <p><strong>Routing:</strong> 101019999</p>
+  <p><strong>Account:</strong> 1234567890</p>
+  <p><strong>Name:</strong> Hacyber Globaltech</p>
+</div>
+
+<div class="card">
+  <h3>After Payment</h3>
+  <ol>
+    <li>Screenshot your payment</li>
+    <li>Send to @hacyberglobal on Telegram</li>
+    <li>Receive bot link within 35 min</li>
+  </ol>
+  <button class="btn" onclick="document.getElementById('timer').style.display='block'">I Paid - Start Timer</button>
+</div>
+
+<div id="timer" class="card">
+  <h3>Payment received! Your link arrives in:</h3>
+  <div id="countdown">35:00</div>
+  <p style="text-align:center;color:#aaa">Do not close this page</p>
+</div>
+
+<script>
+let t = 2100;
+const cd = document.getElementById('countdown');
+setInterval(()=>{
+  if(t>0 && cd){t--;const m=String(Math.floor(t/60)).padStart(2,'0');const s=String(t%60).padStart(2,'0');cd.textContent=`${m}:${s}`;}
+},1000);
 </script>
 
-</body>
-</html>
+
+</body></html>
