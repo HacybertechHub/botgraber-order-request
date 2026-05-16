@@ -1,46 +1,60 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const app = express();
+
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public')));
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const ADMIN_ID = process.env.ADMIN_ID;
-const BUSINESS = process.env.BUSINESS_NAME;
-const FEE = process.env.PROTOCOL_FEE;
+const ADMIN_ID = process.env.ADMIN_ID || '5642832782';
+const FEE = Number(process.env.PROTOCOL_FEE || 130);
+let orders = [];
 
-async function sendTelegram(chatId, text) {
-  try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' })
-    });
-  } catch(e){ console.error('Telegram error', e); }
+async function tg(text){
+  if(!BOT_TOKEN) return;
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:ADMIN_ID,text,parse_mode:'HTML'})
+  }).catch(()=>{});
 }
 
-// Auto-capture admin ID when they /start the bot
-app.post(`/webhook/${BOT_TOKEN}`, async (req, res) => {
-  const msg = req.body.message;
-  if (msg && msg.text === '/start') {
-    const id = msg.chat.id;
-    await sendTelegram(id, `âœ… ${BUSINESS} Bot Active\n\nYour Telegram ID: <code>${id}</code>\n\nCopy this ID into your .env as ADMIN_ID`);
+// App health
+app.get('/api/status',(req,res)=>res.json({app:'HACYBER GLOBALTECH',status:'online',admin:ADMIN_ID}));
+
+// Orders for admin panel
+app.get('/api/orders',(req,res)=>res.json(orders.slice(-20).reverse()));
+
+// Flutterwave webhook
+app.post('/api/webhook', async (req,res)=>{
+  if(req.headers['verif-hash'] !== process.env.FLW_SECRET_HASH) return res.sendStatus(401);
+  const d = req.body.data;
+  if(d?.status==='successful' && Number(d.amount)>=FEE){
+    const order={id:Date.now(),amount:d.amount,email:d.customer?.email,time:Date.now()};
+    orders.push(order);
+    await tg(`ðŸ’° <b>NEW PAYMENT</b>\n$${d.amount} from ${d.customer?.email}\nRef: ${d.tx_ref}`);
+  }
+  res.json({ok:true});
+});
+
+// Telegram webhook
+app.post(`/api/tg/${BOT_TOKEN}`, (req,res)=>{
+  const msg=req.body.message;
+  if(msg?.text==='/start'){
+    tg(`Admin connected: ${msg.chat.id}`);
   }
   res.sendStatus(200);
 });
 
-// Flutterwave payment webhook
-app.post('/webhook', async (req, res) => {
-  const sig = req.headers['verif-hash'];
-  if (sig !== process.env.FLW_SECRET_HASH) return res.status(401).send('Invalid');
-  
-  const data = req.body.data;
-  if (data && data.status === 'successful' && Number(data.amount) >= Number(FEE)) {
-    const alert = `ðŸ’° NEW PAYMENT\n${BUSINESS}\nAmount: $${data.amount}\nEmail: ${data.customer?.email}\nRef: ${data.tx_ref}\n\nâ±ï¸ Send bot link within 35 min`;
-    await sendTelegram(ADMIN_ID, alert);
-  }
-  res.json({status:'ok'});
+// Flutterwave payment redirect
+app.get('/api/pay',(req,res)=>{
+  const link = `https://checkout.flutterwave.com/pay/${process.env.FLW_MERCHANT_ID}?amount=${FEE}`;
+  res.redirect(link);
 });
 
-app.get('/', (req,res)=> res.json({status:'online', bot:'@hacyberglobal_automation_bot'}));
-
+const PORT = process.env.PORT || 3000;
+if(process.env.VERCEL!== '1'){
+  app.listen(PORT,()=>console.log(`HACYBER App+Server on ${PORT}`));
+}
 module.exports = app;
