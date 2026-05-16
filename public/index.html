@@ -1,3 +1,46 @@
-<div style="text-align:center;color:#666;font-size:12px;margin-top:30px">
-  Security: hacyberhub@mail.com • Report abuse within 24h
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HACYBER GLOBALTECH - $130 Bot Grabber</title>
+<meta name="theme-color" content="#00ff88">
+<link rel="manifest" href="/manifest.json">
+<style>
+body{margin:0;background:#0a0a0a;color:#fff;font-family:system-ui;padding:20px}
+h1{color:#00ff88;text-align:center}
+.card{background:#111;border:1px solid #333;border-radius:12px;padding:20px;margin:15px auto;max-width:600px}
+.price{font-size:32px;color:#00ff88;font-weight:700}
+.btn{background:#00ff88;color:#000;padding:14px;border:none;border-radius:8px;width:100%;font-weight:700;font-size:16px;margin-top:10px;cursor:pointer}
+.note{color:#ffaa00}
+.badge{display:inline-block;background:#222;padding:4px 10px;border-radius:20px;font-size:12px;margin:3px}
+#timer{display:none}
+#countdown{font-size:42px;text-align:center;color:#00ff88}
+</style>
+</head>
+<body>
+<h1>HACYBER GLOBALTECH</h1>
+<div class="card">
+  <div class="price">$130 Bot Grabber</div>
+  <p class="note">Link delivered within 35 minutes</p>
+  <p>First: $130 • Monthly: $90</p>
+  <div><span class="badge">DoorDash</span><span class="badge">Uber Eats</span><span class="badge">Grubhub</span><span class="badge">Instacart</span><span class="badge">Amazon Flex</span></div>
 </div>
+<div class="card">
+  <h3>Pay Securely</h3>
+  <button class="btn" onclick="location.href='/api/pay'">Pay $130 with Flutterwave</button>
+  <p style="font-size:12px;color:#aaa;text-align:center">Instant confirmation</p>
+</div>
+<div class="card">
+  <h3>After Payment</h3>
+  <button class="btn" onclick="start()">I Paid - Start Timer</button>
+</div>
+<div id="timer" class="card">
+  <div id="countdown">35:00</div>
+  <p style="text-align:center">Keep this page open</p>
+</div>
+<script>
+let t=2100;
+function start(){document.getElementById('timer').style.display='block';setInterval(()=>{if(t>0){t--;document.getElementById('countdown').textContent=`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`}},1000)}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
+</script>
+
+</body></html>
