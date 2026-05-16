@@ -1,24 +1,15 @@
 {
   "version": 2,
-  "name": "hacyber-nexus-elite",
   "builds": [
     {
-      "src": "sever.js",
+      "src": "api/index.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/api/transmit",
-      "dest": "sever.js"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "api/index.js"
     }
   ]
 }
