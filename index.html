@@ -1,276 +1,438 @@
 <html lang="en"><head>
-<!-- Playables SDK -->
-<script>// Playables SDK v1.0.0
-// Game lifecycle bridge: rAF-based game-ready detection + event communication
-(function() {
-  'use strict';
-
-  // Idempotency: skip if already initialized (e.g., server-side injection
-  // followed by client-side inject-javascript via the Bloks webview component).
-  if (window.playablesSDK) return;
-
-  var HANDLER_NAME = 'playablesGameEventHandler';
-  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
-  var RAF_FRAME_THRESHOLD = 3;
-
-  var gameReadySent = false;
-  var firstInteractionSent = false;
-  var errorSent = false;
-  var frameCount = 0;
-  var originalRAF = window.requestAnimationFrame;
-
-  // --- Transport Layer ---
-
-  function hasIOSBridge() {
-    return !!(window.webkit &&
-              window.webkit.messageHandlers &&
-              window.webkit.messageHandlers[HANDLER_NAME]);
-  }
-
-  function hasAndroidBridge() {
-    return !!(window[ANDROID_BRIDGE_NAME] &&
-              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
-  }
-
-  function isInIframe() {
-    return !!(window.parent && window.parent !== window);
-  }
-
-  function sendEvent(eventName, payload) {
-    var message = {
-      type: eventName,
-      payload: payload || {},
-      timestamp: Date.now()
-    };
-
-    if (hasIOSBridge()) {
-      try {
-        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
-      } catch (e) { /* ignore */ }
-      return;
-    }
-
-    if (hasAndroidBridge()) {
-    try {
-      var p = payload || {};
-      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
-      p.timestamp = message.timestamp;
-      window[ANDROID_BRIDGE_NAME].postEvent(
-        eventName,
-        JSON.stringify(p)
-      );
-    } catch (e) { /* ignore */ }
-    return;
-  }
-
-    if (isInIframe()) {
-      try {
-        window.parent.postMessage(message, '*');
-      } catch (e) { /* ignore */ }
-      return;
-    }
-  }
-
-  // --- rAF Game-Ready Detection ---
-
-  function onFrame() {
-    if (gameReadySent) return;
-
-    frameCount++;
-    if (frameCount >= RAF_FRAME_THRESHOLD) {
-      gameReadySent = true;
-      sendEvent('game_ready', {
-        frame_count: frameCount,
-        detected_at: Date.now()
-      });
-      return;
-    }
-
-    originalRAF.call(window, onFrame);
-  }
-
-  if (originalRAF) {
-    window.requestAnimationFrame = function(callback) {
-      if (!gameReadySent) {
-        return originalRAF.call(window, function(timestamp) {
-          frameCount++;
-          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
-            gameReadySent = true;
-            sendEvent('game_ready', {
-              frame_count: frameCount,
-              detected_at: Date.now()
-            });
-          }
-          callback(timestamp);
-        });
-      }
-      return originalRAF.call(window, callback);
-    };
-  }
-
-  // --- First User Interaction Detection ---
-
-  function setupFirstInteractionDetection() {
-    var events = ['touchstart', 'mousedown', 'keydown'];
-
-    function onFirstInteraction() {
-      if (firstInteractionSent) return;
-      firstInteractionSent = true;
-      sendEvent('user_interaction_start', null);
-
-      for (var i = 0; i < events.length; i++) {
-        document.removeEventListener(events[i], onFirstInteraction, true);
-      }
-    }
-
-    for (var i = 0; i < events.length; i++) {
-      document.addEventListener(events[i], onFirstInteraction, true);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
-  } else {
-    setupFirstInteractionDetection();
-  }
-
-  // --- Auto Error Capture ---
-
-  window.addEventListener('error', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    sendEvent('error', {
-      message: event.message || 'Unknown error',
-      source: event.filename || '',
-      lineno: event.lineno || 0,
-      colno: event.colno || 0,
-      auto_captured: true
-    });
-  });
-
-  window.addEventListener('unhandledrejection', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    var reason = event.reason;
-    sendEvent('error', {
-      message: (reason instanceof Error) ? reason.message : String(reason),
-      type: 'unhandled_promise_rejection',
-      auto_captured: true
-    });
-  });
-
-  // --- Public API ---
-
-  window.playablesSDK = {
-    complete: function(score) {
-      sendEvent('game_ended', {
-        score: score,
-        completed: true
-      });
-    },
-
-    error: function(message) {
-      if (errorSent) return;
-      errorSent = true;
-      sendEvent('error', {
-        message: message || 'Unknown error',
-        auto_captured: false
-      });
-    },
-
-    sendEvent: function(eventName, payload) {
-      if (!eventName || typeof eventName !== 'string') return;
-      sendEvent(eventName, payload);
-    }
-  };
-
-  // Kick off rAF detection in case no game code calls rAF immediately
-  if (originalRAF) {
-    originalRAF.call(window, onFrame);
-  }
-})();</script>
-<!-- PLAYABLE_TOUCH_PATCH_V1 --><script>
-(function() {
-  if (window.__playableTouchPatchInstalled) return;
-  window.__playableTouchPatchInstalled = true;
-  var origAdd = EventTarget.prototype.addEventListener;
-  var blockedTypes = { touchstart: 1, touchmove: 1, wheel: 1 };
-  EventTarget.prototype.addEventListener = function(type, listener, options) {
-    if (blockedTypes[type]) {
-      if (options === undefined || options === null) {
-        options = { passive: true };
-      } else if (typeof options === 'boolean') {
-        options = { capture: options, passive: true };
-      } else {
-        options = Object.assign({}, options, { passive: true });
-      }
-    }
-    return origAdd.call(this, type, listener, options);
-  };
-})();
-</script><script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
-<title>HACYBER GLOBALTECH - Bot Grabber $130</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HACYBER GLOBALTECH — $130 Bot Grabber</title>
+<meta name="theme-color" content="#0a0a0a">
 <style>
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0a0a0a;color:#fff;margin:0;padding:20px}
-h1{color:#00ff88;text-align:center}
-.card{background:#111;border:1px solid #333;border-radius:12px;padding:20px;margin:15px auto;max-width:600px}
-.price{font-size:32px;color:#00ff88;font-weight:700}
-.note{color:#ffaa00;font-weight:600;margin:10px 0}
-ul{line-height:1.8}
-.btn{background:#00ff88;color:#000;padding:12px 20px;border:none;border-radius:8px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
-#timer{display:none}
-#countdown{font-size:48px;text-align:center;color:#00ff88}
+:root{
+  --bg:#0a0a0a;
+  --card:#111111;
+  --card2:#151515;
+  --neon:#00ff88;
+  --orange:#ff8c00;
+  --text:#e5e5e5;
+  --muted:#8a8f98;
+  --border:#1e1e1e;
+  --red:#ff4444;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  background-image: radial-gradient(600px circle at 50% -10%, rgba(0,255,136,0.08), transparent 60%);
+  color:var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing:antialiased;
+  padding:20px 16px 40px;
+  line-height:1.5;
+}
+.container{max-width:440px;margin:0 auto}
+.header{text-align:center;margin-bottom:22px}
+.logo{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;letter-spacing:1.8px;
+  color:var(--muted);text-transform:uppercase;
+}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--neon);box-shadow:0 0 12px rgba(0,255,136,.8);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:22px;
+  margin-bottom:14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.02);
+  backdrop-filter:blur(10px);
+}
+h1{
+  color:var(--neon);
+  font-size:32px;
+  font-weight:800;
+  letter-spacing:-0.5px;
+  line-height:1.1;
+  margin-bottom:8px;
+  text-shadow:0 0 30px rgba(0,255,136,.25);
+}
+.subtitle{
+  color:var(--orange);
+  font-size:14px;
+  font-weight:600;
+  margin-bottom:14px;
+}
+.price-line{
+  font-size:15px;
+  color:#d1d5db;
+  margin-bottom:4px;
+}
+.price-line strong{color:#fff;font-weight:600}
+.works{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--border);
+}
+.works-label{
+  font-size:11px;color:var(--muted);margin-bottom:10px;
+  text-transform:uppercase;letter-spacing:.8px;font-weight:600;
+}
+.badges{display:flex;flex-wrap:wrap;gap:7px}
+.badge{
+  background:#0c0c0c;
+  border:1px solid #232323;
+  color:#cfd3d8;
+  padding:6px 11px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:500;
+}
+
+.card-title{
+  font-size:15px;
+  font-weight:700;
+  margin-bottom:16px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#fff;
+  letter-spacing:.2px;
+}
+.card-title svg{width:18px;height:18px;color:var(--neon);flex-shrink:0}
+
+.wallet{
+  background:var(--card2);
+  border:1px solid #202020;
+  border-radius:14px;
+  padding:13px 14px;
+  margin-bottom:10px;
+  transition:border .2s;
+}
+.wallet:hover{border-color:#2a2a2a}
+.wallet:last-child{margin-bottom:0}
+.wallet-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.wallet-name{font-weight:600;font-size:13.5px;color:#fff;display:flex;align-items:center;gap:6px}
+.wallet-name span{opacity:.9}
+.wallet-network{font-size:10.5px;color:var(--muted);background:#0a0a0a;padding:3px 7px;border-radius:6px;border:1px solid #222;font-weight:500}
+.wallet-address{display:flex;align-items:flex-start;gap:8px}
+.address{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:12px;color:#aeb3bc;word-break:break-all;flex:1;line-height:1.5;padding-top:2px;
+}
+.copy-btn{
+  background:transparent;border:1px solid var(--neon);color:var(--neon);
+  padding:6px 11px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;
+  transition:all .18s;white-space:nowrap;flex-shrink:0;letter-spacing:.3px;
+}
+.copy-btn:hover{background:rgba(0,255,136,.1);box-shadow:0 0 14px rgba(0,255,136,.18);transform:translateY(-1px)}
+.copy-btn:active{transform:scale(.96)}
+.copy-btn.copied{background:var(--neon);color:#000;border-color:var(--neon)}
+
+.wise-box{
+  background:var(--card2);border:1px solid #202020;border-radius:14px;padding:16px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.wise-tag{font-size:18px;font-weight:700;color:#fff;font-family:ui-monospace,monospace;letter-spacing:.2px}
+.wise-note{margin-top:11px;font-size:12px;color:var(--muted);text-align:center;line-height:1.4}
+.wise-note strong{color:var(--orange);font-weight:600}
+
+.form-group{margin-bottom:13px}
+label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+input,select{
+  width:100%;background:#0c0c0c;border:1px solid #252525;color:#fff;
+  padding:12px 13px;border-radius:10px;font-size:14px;font-family:inherit;
+  transition:all .18s;outline:none;
+}
+input:focus,select:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(0,255,136,.12);background:#0f0f0f}
+input::placeholder{color:#5a5f67}
+select{
+  cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:36px
+}
+.submit-btn{
+  width:100%;background:var(--neon);color:#000;border:none;padding:14px;border-radius:12px;
+  font-size:15px;font-weight:800;cursor:pointer;margin-top:6px;transition:all .2s;
+  box-shadow:0 4px 20px rgba(0,255,136,.22), inset 0 1px 0 rgba(255,255,255,.2);
+  letter-spacing:.3px;
+}
+.submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(0,255,136,.32), inset 0 1px 0 rgba(255,255,255,.2)}
+.submit-btn:active{transform:translateY(0)}
+.submit-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+.timer-card{
+  display:none;background:linear-gradient(180deg,rgba(0,255,136,.08),rgba(0,255,136,.02));
+  border:1px solid rgba(0,255,136,.25);border-radius:20px;padding:22px;margin-bottom:14px;text-align:center;
+  box-shadow:0 0 40px rgba(0,255,136,.08), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.timer-card.active{display:block;animation:slideIn .4s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.timer-title{color:var(--neon);font-size:12px;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:1.2px}
+.timer-display{font-size:52px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:1px;margin:4px 0;text-shadow:0 0 30px rgba(0,255,136,.4);line-height:1}
+.timer-sub{font-size:13px;color:#aeb3bc;margin-top:4px}
+.timer-bar{width:100%;height:5px;background:rgba(0,0,0,.5);border-radius:3px;margin-top:16px;overflow:hidden;border:1px solid rgba(0,255,136,.15)}
+.timer-progress{height:100%;background:linear-gradient(90deg,var(--neon),#00cc6a);width:100%;transition:width 1s linear;box-shadow:0 0 10px rgba(0,255,136,.5)}
+
+.success-msg{
+  display:none;background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.25);
+  color:#7affc1;padding:11px;border-radius:10px;font-size:13px;margin-top:12px;text-align:center;font-weight:500
+}
+.success-msg.show{display:block;animation:slideIn .3s ease}
+
+.footer{text-align:center;margin-top:28px;font-size:11px;color:#4b4f56}
+.security{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;color:#5a5f67}
+.security svg{width:12px;height:12px}
+
+@media (max-width:480px){body{padding:16px 14px 30px}.card{padding:19px}h1{font-size:28px}.timer-display{font-size:46px}}
 </style>
 </head>
 <body>
-<h1>HACYBER GLOBALTECH</h1>
+<div class="container">
+  <div class="header">
+    <div class="logo"><span class="logo-dot"></span>HACYBER GLOBALTECH</div>
+  </div>
 
-<div class="card">
-  <div class="price">$130 Bot Grabber</div>
-  <p class="note">⏱️ Link sent within 35 minutes max after payment verification</p>
-  <p><strong>First-time setup:</strong> $130 • <strong>Monthly renewal:</strong> $90</p>
-  <p><strong>Works on:</strong> DoorDash • Uber Eats • Grubhub • Instacart • Amazon Flex</p>
-</div>
+  <div id="timerCard" class="timer-card">
+    <div class="timer-title">Link Delivery Countdown</div>
+    <div class="timer-display" id="timerDisplay">35:00</div>
+    <div class="timer-sub" id="timerSub">Verification in progress — max 35 minutes</div>
+    <div class="timer-bar"><div class="timer-progress" id="timerProgress"></div></div>
+  </div>
 
-<div class="card">
-  <h3>Pay with Crypto</h3>
-  <p><strong>BTC:</strong> bc1qxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
-  <p><strong>ETH/USDT (ERC20):</strong> 0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
-  <p><strong>SOL:</strong> xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</p>
-</div>
+  <div class="card">
+    <h1>$130 Bot Grabber</h1>
+    <div class="subtitle">Link sent within 35 minutes max after payment verification</div>
+    <div class="price-line"><strong>First-time setup:</strong> $130 • <strong>Monthly renewal:</strong> $90</div>
+    <div class="works">
+      <div class="works-label">Works on</div>
+      <div class="badges">
+        <span class="badge">DoorDash</span>
+        <span class="badge">Uber Eats</span>
+        <span class="badge">Grubhub</span>
+        <span class="badge">Instacart</span>
+        <span class="badge">Amazon Flex</span>
+      </div>
+    </div>
+  </div>
 
-<div class="card">
-  <h3>Pay with Bank (Lead Bank)</h3>
-  <p><strong>Routing:</strong> 101019999</p>
-  <p><strong>Account:</strong> 1234567890</p>
-  <p><strong>Name:</strong> Hacyber Globaltech</p>
-</div>
+  <div class="card">
+    <div class="card-title">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      Pay with Crypto
+    </div>
 
-<div class="card">
-  <h3>After Payment</h3>
-  <ol>
-    <li>Screenshot your payment</li>
-    <li>Send to @hacyberglobal on Telegram</li>
-    <li>Receive bot link within 35 min</li>
-  </ol>
-  <button class="btn" onclick="document.getElementById('timer').style.display='block'">I Paid - Start Timer</button>
-</div>
+    <div class="wallet">
+      <div class="wallet-header">
+        <div class="wallet-name">Bitcoin</div>
+        <span class="wallet-network">BTC</span>
+      </div>
+      <div class="wallet-address">
+        <span class="address" id="btc">35e99VQwk2dYUiBJeKe2wnd73drgFFacPp</span>
+        <button class="copy-btn" onclick="copyAddr('btc',this)">Copy</button>
+      </div>
+    </div>
 
-<div id="timer" class="card">
-  <h3>Payment received! Your link arrives in:</h3>
-  <div id="countdown">35:00</div>
-  <p style="text-align:center;color:#aaa">Do not close this page</p>
+    <div class="wallet">
+      <div class="wallet-header">
+        <div class="wallet-name">Ethereum / USDT</div>
+        <span class="wallet-network">ERC20</span>
+      </div>
+      <div class="wallet-address">
+        <span class="address" id="eth">0x575acfce162dc14fb2f6a7440c0da61c3d5f8a8f</span>
+        <button class="copy-btn" onclick="copyAddr('eth',this)">Copy</button>
+      </div>
+    </div>
+
+    <div class="wallet">
+      <div class="wallet-header">
+        <div class="wallet-name">Tether</div>
+        <span class="wallet-network">TRC20</span>
+      </div>
+      <div class="wallet-address">
+        <span class="address" id="trc">TBdEnSsWQwZAMKiRe54fPi3d45aJyoXqj6</span>
+        <button class="copy-btn" onclick="copyAddr('trc',this)">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+      Pay with Wise
+    </div>
+    <div class="wise-box">
+      <span class="wise-tag" id="wise">@hacyberglobaltech</span>
+      <button class="copy-btn" onclick="copyText('@hacyberglobaltech',this)">Copy</button>
+    </div>
+    <div class="wise-note">Send exactly <strong>$130 USD</strong> — include your email in note</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      After Payment
+    </div>
+    <form id="paymentForm">
+      <div class="form-group">
+        <label>Email for delivery</label>
+        <input type="email" id="email" placeholder="you@email.com" required="" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Transaction Hash / ID</label>
+        <input type="text" id="txhash" placeholder="Paste TX hash or Wise reference" required="">
+      </div>
+      <div class="form-group">
+        <label>Payment method</label>
+        <select id="method" required="">
+          <option value="">Select method...</option>
+          <option>BTC</option>
+          <option>ETH</option>
+          <option>USDT-ERC20</option>
+          <option>USDT-TRC20</option>
+          <option>Wise</option>
+        </select>
+      </div>
+      <button type="submit" class="submit-btn" id="submitBtn">I Paid $130</button>
+      <div id="successMsg" class="success-msg">✓ Payment submitted! Check your email within 35 minutes.</div>
+    </form>
+  </div>
+
+  <div class="footer">
+    © 2025 HACYBER GLOBALTECH • Instant delivery system
+    <div class="security">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+      Secure end-to-end verification
+    </div>
+  </div>
 </div>
 
 <script>
-let t = 2100;
-const cd = document.getElementById('countdown');
-setInterval(()=>{
-  if(t>0 && cd){t--;const m=String(Math.floor(t/60)).padStart(2,'0');const s=String(t%60).padStart(2,'0');cd.textContent=`${m}:${s}`;}
-},1000);
-</script>
+function copyAddr(id, btn){
+  const text = document.getElementById(id).textContent.trim();
+  copyText(text, btn);
+}
+function copyText(text, btn){
+  const success = () => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent = orig; btn.classList.remove('copied')}, 1800);
+  };
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(success).catch(()=>{
+      fallback(text, success);
+    });
+  }else{
+    fallback(text, success);
+  }
+}
+function fallback(text, cb){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{document.execCommand('copy'); cb();}catch(e){}
+  document.body.removeChild(ta);
+}
 
+const TIMER_KEY = 'hacyber_payment_ts';
+const DURATION = 35 * 60;
+let timerInterval = null;
+
+function startTimer(startTime){
+  const card = document.getElementById('timerCard');
+  const display = document.getElementById('timerDisplay');
+  const progress = document.getElementById('timerProgress');
+  const sub = document.getElementById('timerSub');
+  card.classList.add('active');
+  
+  function tick(){
+    const elapsed = Math.floor((Date.now() - startTime)/1000);
+    const remaining = Math.max(0, DURATION - elapsed);
+    const m = Math.floor(remaining/60).toString().padStart(2,'0');
+    const s = (remaining%60).toString().padStart(2,'0');
+    display.textContent = `${m}:${s}`;
+    progress.style.width = (remaining/DURATION*100)+'%';
+    
+    if(remaining <= 0){
+      sub.textContent = 'Time window ended. Contact support if no link received.';
+      sub.style.color = 'var(--orange)';
+      clearInterval(timerInterval);
+    }
+  }
+  tick();
+  clearInterval(timerInterval);
+  timerInterval = setInterval(tick, 1000);
+}
+
+document.getElementById('paymentForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const email = document.getElementById('email').value.trim();
+  const txHash = document.getElementById('txhash').value.trim();
+  const method = document.getElementById('method').value;
+  
+  if(!email || !txHash || !method) return;
+  
+  btn.disabled = true;
+  btn.textContent = 'Verifying...';
+  
+  const payload = {
+    email,
+    txHash,
+    method,
+    amount: 130,
+    product: 'Bot Grabber',
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent
+  };
+  
+  try{
+    // POST to backend - backend handles Telegram integration
+    await fetch('/api/payment', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    }).catch(()=>{}); // fail silently for demo
+    
+    // Start 35-min timer
+    const now = Date.now();
+    localStorage.setItem(TIMER_KEY, now.toString());
+    localStorage.setItem('hacyber_email', email);
+    
+    document.getElementById('successMsg').classList.add('show');
+    startTimer(now);
+    btn.textContent = 'Submitted ✓';
+    btn.style.background = '#00cc6a';
+    
+    setTimeout(()=>{
+      document.getElementById('timerCard').scrollIntoView({behavior:'smooth', block:'center'});
+    }, 300);
+    
+  }catch(err){
+    btn.disabled = false;
+    btn.textContent = 'I Paid $130';
+    alert('Submission error. Please email support@hacyberglobaltech with your TX hash.');
+  }
+});
+
+// Restore timer on load
+window.addEventListener('DOMContentLoaded', ()=>{
+  const saved = localStorage.getItem(TIMER_KEY);
+  const savedEmail = localStorage.getItem('hacyber_email');
+  if(savedEmail) document.getElementById('email').value = savedEmail;
+  
+  if(saved){
+    const start = parseInt(saved, 10);
+    const age = Date.now() - start;
+    if(age < DURATION * 1000){
+      document.getElementById('successMsg').classList.add('show');
+      document.getElementById('submitBtn').textContent = 'Submitted ✓';
+      document.getElementById('submitBtn').disabled = true;
+      document.getElementById('submitBtn').style.background = '#00cc6a';
+      startTimer(start);
+    }else{
+      localStorage.removeItem(TIMER_KEY);
+    }
+  }
+});
+</script>
 
 </body></html>
