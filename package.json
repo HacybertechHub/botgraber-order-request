@@ -1,2 +1,15 @@
-   "homepage": "https://your-github-username.github.io/your-repository-name",
-{"name":"hacyber-clean","version":"3.0.0","main":"api/index.js","scripts":{"start":"node api/index.js"},"dependencies":{"express":"^4.19.2","dotenv":"^16.4.5"}}
+{
+  "name": "hacyber-botgraber-order-request",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  }
+}
