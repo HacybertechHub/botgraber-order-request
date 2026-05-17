@@ -1,1 +1,3 @@
+   "homepage": "https://your-github-username.github.io/your-repository-name",
+j
 {"name":"hacyber-clean","version":"3.0.0","main":"api/index.js","scripts":{"start":"node api/index.js"},"dependencies":{"express":"^4.19.2","dotenv":"^16.4.5"}}
