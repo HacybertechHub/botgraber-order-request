@@ -199,6 +199,25 @@ select{
 
   <div class="card">
     <h1>$130 Bot Grabber🤖</h1>
+    <button class="btn" style="background:#222;color:#00ff88;border:1px solid #00ff88;margin-top:15px" onclick="showOptions()">
+  ⚙️ Other Bot Options
+</button>
+
+<div id="options" style="display:none;margin-top:10px">
+  <button class="badge" onclick="selectBot('monthly')">Monthly Renewal - $90</button>
+  <button class="badge" onclick="selectBot('custom')">Custom Bot - Contact</button>
+  <button class="badge" onclick="location.href='https://t.me/hacyberglobaltech'">Talk to Support</button>
+</div>
+<script>
+function showOptions(){
+  document.getElementById('options').style.display = 
+    document.getElementById('options').style.display === 'none' ? 'block' : 'none';
+}
+function selectBot(type){
+  if(type==='monthly'){ alert('Selected: Monthly $90 - pay to same wallets'); }
+  if(type==='custom'){ location.href='https://t.me/hacyberglobaltech'; }
+}
+</script>
     <div class="subtitle">Link sent within 35 minutes max after payment verification</div>
     <div class="price-line"><strong>First-time setup:</strong> $130 • <strong>Monthly renewal:</strong> $90</div>
     <div class="works">
